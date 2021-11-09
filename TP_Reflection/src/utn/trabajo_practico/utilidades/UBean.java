@@ -40,10 +40,12 @@ public class UBean
 
     public Object ejecutarGet(Object o, String att)
     {
+        Object value = new Object();
+
         try
         {
             // FIXME Mejorar
-            o.getClass().getMethod("get" + att,o.getClass()).invoke(o.getClass());
+            value = o.getClass().getMethod("get" + att,o.getClass()).invoke(o.getClass());
         }
         catch (IllegalAccessException e)
         {
@@ -57,6 +59,7 @@ public class UBean
         {
             e.printStackTrace();
         }
+        return value;
     }
 
 }
