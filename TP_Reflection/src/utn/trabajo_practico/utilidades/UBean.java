@@ -62,4 +62,9 @@ public class UBean
         return value;
     }
 
+    public Object obtenerAnotaciones(Object o, Class anotacion)
+    {
+        return o.getClass().getAnnotation(anotacion);
+    }
+
 }
