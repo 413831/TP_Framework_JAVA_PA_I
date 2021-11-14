@@ -18,7 +18,7 @@ public class Consultas
 {
     private static UConexion conexion;
 
-    public static void guardar(Object o)
+    public static Object guardar(Object o)
     {
         try
         {
@@ -42,12 +42,30 @@ public class Consultas
             valores += ")";
             query += columnas + "values" + valores + ";";
 
-            PreparedStatement insert = Consultas.conexion.getConnection().prepareStatement(query);
+            PreparedStatement insert = Consultas.conexion.getConnection()
+                                                         .prepareStatement(query,Statement.RETURN_GENERATED_KEYS);
             insert.execute();
+            ResultSet generatedKeys = insert.getGeneratedKeys();
+            if(generatedKeys.next())
+            {
+                for (Field atributo: atributos)
+                {
+                    if(atributo.getAnnotation(Id.class) != null)
+                    {
+                        Columna columna = atributo.getAnnotation(Columna.class);
+
+                        ubean.ejecutarSet(o,atributo.getName(),generatedKeys.getObject(columna.nombre()));
+                    }
+                }
+            }
         }
         catch (SQLException e)
         {
             e.printStackTrace();
+        }
+        finally
+        {
+            return o;
         }
     }
 
