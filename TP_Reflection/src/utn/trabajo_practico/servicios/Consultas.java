@@ -69,6 +69,31 @@ public class Consultas
         }
     }
 
+    public Object guardarModificar(Object o)
+    {
+        UBean ubean = new UBean();
+        ArrayList<Field> atributos = ubean.obtenerAtributos(o);
+        Object id = "";
+
+        for (Field atributo: atributos)
+        {
+            if(atributo.getAnnotation(Id.class) != null)
+            {
+                Columna columna = atributo.getAnnotation(Columna.class);
+                id = atributo.toString();
+            }
+        }
+        if(Consultas.obtenerPorId(o.getClass(),id) != null)
+        {
+            Consultas.modificar(o);
+        }
+        else
+        {
+            o = Consultas.guardar(o);
+        }
+        return o;
+    }
+
     public static void modificar(Object o)
     {
         try
@@ -149,17 +174,17 @@ public class Consultas
             // Ejecuto el SELECT
             PreparedStatement select = Consultas.conexion.getConnection().prepareStatement(query);
             ResultSet result = select.executeQuery();
-            Object[] objeto = new Object[parametros.length];
+            Object[] arguments = new Object[parametros.length];
 
             while(result.next())
             {
                 for (int i = 0; i < atributos.length; i++)
                 {
                     // Se recupera valor del result con nombre de columna en orden de atributos de clase
-                    objeto[i] = result.getObject(atributos[i].getAnnotation(Columna.class).nombre());
+                    arguments[i] = result.getObject(atributos[i].getAnnotation(Columna.class).nombre());
                 }
             }
-            return constructor.get().newInstance(objeto);
+            return constructor.get().newInstance(arguments);
         }
         catch (SQLException e)
         {
@@ -177,7 +202,70 @@ public class Consultas
         {
             e.printStackTrace();
         }
-        return new Object();
+        return null;
+    }
+
+    public ArrayList obtenerTodos(Class c)
+    {
+        try
+        {
+            ArrayList<Object> list = new ArrayList<Object>();
+            UBean ubean = new UBean();
+            Tabla tabla = (Tabla) c.getAnnotation(Tabla.class);
+            Field[] atributos = c.getDeclaredFields();
+            Constructor[] constructores = c.getConstructors();
+            // Busco el constructor con todos los argumentos
+            Optional<Constructor> constructor = Arrays.stream(constructores)
+                                                      .filter(con -> con.getParameterCount() == atributos.length)
+                                                      .findFirst();
+            Object[] parametros = constructor.get().getParameterTypes();
+            String query = "SELECT ";
+            String atributo_id = "";
+            for (Field atributo: atributos)
+            {
+                String nombreAtributo = atributo.getAnnotation(Columna.class).nombre();
+                query += nombreAtributo + ",";
+                if(atributo.getAnnotation(Id.class) != null)
+                {
+                    atributo_id = nombreAtributo;
+                }
+            }
+            query += "FROM " + tabla.nombre() + ";";
+
+            // Ejecuto el SELECT
+            PreparedStatement select = Consultas.conexion.getConnection().prepareStatement(query);
+            ResultSet result = select.executeQuery();
+
+            while(result.next())
+            {
+                Object[] arguments = new Object[parametros.length];
+
+                for (int i = 0; i < atributos.length; i++)
+                {
+                    // Se recupera valor del result con nombre de columna en orden de atributos de clase
+                    arguments[i] = result.getObject(atributos[i].getAnnotation(Columna.class).nombre());
+                    list.add(constructor.get().newInstance(arguments));
+                }
+            }
+            return list;
+        }
+        catch (SQLException e)
+        {
+            e.printStackTrace();
+        }
+        catch (InvocationTargetException e)
+        {
+            e.printStackTrace();
+        }
+        catch (InstantiationException e)
+        {
+            e.printStackTrace();
+        }
+        catch (IllegalAccessException e)
+        {
+            e.printStackTrace();
+        }
+        return null;
     }
 
 }
