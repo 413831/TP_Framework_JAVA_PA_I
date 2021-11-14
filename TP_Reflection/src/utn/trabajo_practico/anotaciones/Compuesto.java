@@ -4,7 +4,6 @@ import java.lang.annotation.*;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
-public @interface Columna
+public @interface Compuesto
 {
-    String nombre();
 }
