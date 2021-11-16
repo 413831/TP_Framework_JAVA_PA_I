@@ -146,16 +146,28 @@ public class Consultas
             Tabla tabla = (Tabla) ubean.obtenerAnotaciones(o, Tabla.class);
             ArrayList<Field> atributos = ubean.obtenerAtributos(o);
 
-            String query = "UPDATE " + tabla.nombre() + "SET ";
+            String query = "UPDATE " + tabla.nombre() + " SET ";
+            String filter = " WHERE ";
 
             for (Field atributo: atributos)
             {
-                Columna columna = atributo.getType().getAnnotation(Columna.class);
-                query += columna.nombre() + " = " + ubean.ejecutarGet(o,atributo.getName()) + ",";
+                Columna columna = atributo.getAnnotation(Columna.class);
+                if(atributo.getAnnotation(Id.class) != null)
+                {
+                    filter += columna.nombre() +  " = '" + ubean.ejecutarGet(o,atributo.getName()) + "';";
+                }
+                else if(atributo.getClass().equals(Integer.class))
+                {
+                    query += columna.nombre() + " = " + ubean.ejecutarGet(o,atributo.getName()) + ",";
+                }
+                else
+                {
+                    query += columna.nombre() + " = '" + ubean.ejecutarGet(o,atributo.getName()) + "',";
+                }
             }
             query = query.substring(0,query.length()-1);
-            System.out.println(query);
-            PreparedStatement update = UConexion.getInstance().getConnection().prepareStatement(query);
+            System.out.println(query + filter);
+            PreparedStatement update = UConexion.getInstance().getConnection().prepareStatement(query + filter);
             update.execute();
         }
         catch (SQLException e)
