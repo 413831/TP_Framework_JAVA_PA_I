@@ -10,13 +10,13 @@ import java.util.Objects;
 @Tabla(nombre = "Personas")
 public class Persona
 {
+    @Id
+    @Columna(nombre = "p_dni")
+    private Integer dni;
     @Columna(nombre = "p_nombre")
     private String nombre;
     @Columna(nombre = "p_apellido")
     private String apellido;
-    @Id
-    @Columna(nombre = "p_dni")
-    private Integer dni;
     @Compuesto
     @Columna(nombre = "p_domicilio")
     private Domicilio domicilio;
@@ -28,11 +28,11 @@ public class Persona
     public Persona()
     {}
 
-    public Persona(String nombre, String apellido, Integer dni, Domicilio domicilio, Integer telefono, String email)
+    public Persona(Integer dni, String nombre, String apellido, Domicilio domicilio, Integer telefono, String email)
     {
+        this.dni = dni;
         this.nombre = nombre;
         this.apellido = apellido;
-        this.dni = dni;
         this.domicilio = domicilio;
         this.telefono = telefono;
         this.email = email;
@@ -102,9 +102,9 @@ public class Persona
     public String toString()
     {
         final StringBuilder sb = new StringBuilder("Persona{");
-        sb.append("nombre='").append(nombre).append('\'');
+        sb.append("dni=").append(dni);
+        sb.append(", nombre='").append(nombre).append('\'');
         sb.append(", apellido='").append(apellido).append('\'');
-        sb.append(", dni=").append(dni);
         sb.append(", domicilio=").append(domicilio);
         sb.append(", telefono=").append(telefono);
         sb.append(", email='").append(email).append('\'');

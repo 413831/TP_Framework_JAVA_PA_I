@@ -88,12 +88,12 @@ public class Domicilio
     @Override
     public String toString()
     {
-        final StringBuilder sb = new StringBuilder("Domicilio{");
-        sb.append("calle='").append(calle).append('\'');
-        sb.append(", altura=").append(altura);
-        sb.append(", codigoPostal=").append(codigoPostal);
-        sb.append(", localidad='").append(localidad).append('\'');
-        sb.append('}');
+        final StringBuilder sb = new StringBuilder("\'");
+        sb.append(id).append('\'').append(",");
+        sb.append('\'').append(calle).append('\'').append(",");
+        sb.append('\'').append(altura).append('\'').append(",");
+        sb.append('\'').append(codigoPostal).append('\'').append(",");
+        sb.append('\'').append(localidad).append('\'');
         return sb.toString();
     }
 
@@ -103,12 +103,12 @@ public class Domicilio
         if (this == o) return true;
         if (!(o instanceof Domicilio)) return false;
         Domicilio domicilio = (Domicilio) o;
-        return Objects.equals(getCalle(), domicilio.getCalle()) && Objects.equals(getAltura(), domicilio.getAltura()) && Objects.equals(getCodigoPostal(), domicilio.getCodigoPostal()) && Objects.equals(getLocalidad(), domicilio.getLocalidad());
+        return Objects.equals(getId(), domicilio.getId()) && Objects.equals(getCalle(), domicilio.getCalle()) && Objects.equals(getAltura(), domicilio.getAltura()) && Objects.equals(getCodigoPostal(), domicilio.getCodigoPostal()) && Objects.equals(getLocalidad(), domicilio.getLocalidad());
     }
 
     @Override
     public int hashCode()
     {
-        return Objects.hash(getCalle(), getAltura(), getCodigoPostal(), getLocalidad());
+        return Objects.hash(getId(), getCalle(), getAltura(), getCodigoPostal(), getLocalidad());
     }
 }

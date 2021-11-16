@@ -34,7 +34,7 @@ public class Consultas
             // Se obtienen nombre de atributos
             ArrayList<Field> atributos = ubean.obtenerAtributos(o);
             // Construccion de consulta
-            String query = "insert into " + tabla.nombre();
+            String query = "INSERT INTO " + tabla.nombre();
             String columnas = " (";
             String valores = " (";
             // Se enlazan valores de los atributos del objeto recibido
@@ -44,53 +44,40 @@ public class Consultas
                 Columna columna = atributo.getAnnotation(Columna.class);
                 columnas += columna.nombre() + ",";
 
-                System.out.println(columnas);
-
+                System.out.println(valores);
+/*
                 if(atributo.getAnnotation(Compuesto.class) != null)
                 {
-                    System.out.println("Atributo compuesto");
-                    Constructor[] constructores = atributo.getType().getConstructors();
-                    Field[] auxiliarAtributos = atributo.getType().getDeclaredFields();
-                    // Busco el constructor con todos los argumentos
-                    Constructor constructor = Arrays.stream(constructores)
-                                                              .filter(con -> con.getParameterCount() == auxiliarAtributos.length).findAny().orElse(null);
-                    Object[] arguments = new Object[constructor.getParameterTypes().length];
 
-                    for (int i = 0; i < auxiliarAtributos.length; i++)
-                    {
-                        System.out.println(auxiliarAtributos[i].getName());
-                        String nameAttribute = auxiliarAtributos[i].getName().substring(0,1).toUpperCase() + auxiliarAtributos[i].getName().substring(1);
-                        Method[] methods = atributo.getType().getDeclaredMethods();
+                }
+                else
+                {
+                    valores += "'" + ubean.ejecutarGet(o,atributo.getName()) + "',";
+                }
 
-                        for (Method method: methods)
-                        {
-                            if(method.getName().startsWith("get" + nameAttribute))
-                            {
-                                //FIXME Pasar valores de los atributos del objeto
-                                arguments[i] = method.invoke(o);
-                            }
-                        }
-                    }
-                    Object claseAtributo = constructor.newInstance(arguments);
-
-                    for (Field atributoCompuesto: auxiliarAtributos)
-                    {
-                        System.out.println(atributoCompuesto.getName());
-                        if(atributoCompuesto.getAnnotation(Id.class) != null)
-                        {
-                            valores += "'" + ubean.ejecutarGet(claseAtributo,atributoCompuesto.getName()) + "',";
-                        }
-                    }
-                    //Consultas.guardar(claseAtributo);
+ */
+                if(atributo.getAnnotation(Compuesto.class) != null)
+                {
+                    Object valorCompuesto = ubean.ejecutarGet(o, atributo.getName());
+                    String[] attAux = String.valueOf(valorCompuesto).split("\'");
+                    String idCompuesto = attAux[1];
+                    System.out.println(idCompuesto);
+                    valores += "'" + idCompuesto + "',";
+                }
+                else if(atributo.getType().equals(Integer.class))
+                {
+                    valores += ubean.ejecutarGet(o,atributo.getName()) + ",";
                 }
                 else
                 {
                     valores += "'" + ubean.ejecutarGet(o,atributo.getName()) + "',";
                 }
             }
+            columnas = columnas.substring(0,columnas.length()-1);
             columnas += ") ";
+            valores = valores.substring(0,valores.length()-1);
             valores += ")";
-            query += columnas + "values" + valores + ";";
+            query += columnas + "VALUES" + valores + ";";
             System.out.println(query);
 
             PreparedStatement insert = UConexion.getInstance().getConnection()
@@ -115,6 +102,10 @@ public class Consultas
         catch (SQLException e)
         {
             e.printStackTrace();
+        }
+        catch (ClassCastException ex)
+        {
+            ex.printStackTrace();
         }
         finally
         {
@@ -159,10 +150,11 @@ public class Consultas
 
             for (Field atributo: atributos)
             {
-                Columna columna = (Columna) ubean.obtenerAnotaciones(o,Columna.class);
+                Columna columna = atributo.getType().getAnnotation(Columna.class);
                 query += columna.nombre() + " = " + ubean.ejecutarGet(o,atributo.getName()) + ",";
             }
-
+            query = query.substring(0,query.length()-1);
+            System.out.println(query);
             PreparedStatement update = UConexion.getInstance().getConnection().prepareStatement(query);
             update.execute();
         }
@@ -186,9 +178,10 @@ public class Consultas
             {
                 if(atributo.getAnnotation(Id.class) != null)
                 {
-                    query += atributo.getName() + " = " + ubean.ejecutarGet(o,atributo.getName());
+                    query += atributo.getAnnotation(Columna.class).nombre() + " = " + ubean.ejecutarGet(o,atributo.getName());
                 }
             }
+            System.out.println("DELETE");
             PreparedStatement delete = UConexion.getInstance().getConnection().prepareStatement(query);
             delete.execute();
         }
@@ -222,9 +215,12 @@ public class Consultas
                     atributo_id = nombreAtributo;
                 }
             }
-            query += "FROM " + tabla.nombre() + " WHERE " + atributo_id + " = " + id + ";";
+            query = query.substring(0,query.length()-1);
+            query += " FROM " + tabla.nombre() + " WHERE " + atributo_id + " = " + id + ";";
 
+            System.out.println(query);
             // Ejecuto el SELECT
+            System.out.println("SELECT");
             PreparedStatement select = UConexion.getInstance().getConnection().prepareStatement(query);
             ResultSet result = select.executeQuery();
             Object[] arguments = new Object[parametros.length];
@@ -237,6 +233,7 @@ public class Consultas
                     arguments[i] = result.getObject(atributos[i].getAnnotation(Columna.class).nombre());
                 }
             }
+
             return constructor.get().newInstance(arguments);
         }
         catch (SQLException e)
@@ -319,6 +316,66 @@ public class Consultas
             e.printStackTrace();
         }
         return null;
+    }
+
+    public void guardarCompuesto(Field atributo)
+    {
+        try
+        {
+            System.out.println("Atributo compuesto");
+            String valores = "";
+            UBean ubean = new UBean();
+            Constructor[] constructores = atributo.getType().getConstructors();
+            Field[] auxiliarAtributos = atributo.getType().getDeclaredFields();
+            // Busco el constructor con todos los argumentos
+            Constructor constructor = Arrays.stream(constructores)
+                                            .filter(con -> con.getParameterCount() == auxiliarAtributos.length).findAny().orElse(null);
+            Object[] arguments = new Object[constructor.getParameterTypes().length];
+
+            for (int i = 0; i < auxiliarAtributos.length; i++)
+            {
+                System.out.println(auxiliarAtributos[i].getName());
+                String nameAttribute = auxiliarAtributos[i].getName().substring(0,1).toUpperCase() + auxiliarAtributos[i].getName().substring(1);
+                Method[] methods = atributo.getType().getDeclaredMethods();
+
+                for (Method method: methods)
+                {
+                    if(method.getName().startsWith("get" + nameAttribute))
+                    {
+                        //FIXME Pasar valores de los atributos del objeto
+
+                        arguments[i] = method.invoke(atributo);
+
+
+                    }
+                }
+            }
+            Object claseAtributo = constructor.newInstance(arguments);
+
+            for (Field atributoCompuesto: auxiliarAtributos)
+            {
+                System.out.println(atributoCompuesto.getName());
+                if(atributoCompuesto.getAnnotation(Id.class) != null)
+                {
+                    valores += "'" + ubean.ejecutarGet(claseAtributo,atributoCompuesto.getName()) + "',";
+                }
+            }
+            Consultas.guardar(claseAtributo);
+        }
+        catch (InvocationTargetException e)
+        {
+            e.printStackTrace();
+        }
+        catch (IllegalAccessException e)
+        {
+            e.printStackTrace();
+        }
+        catch (InstantiationException e)
+        {
+            e.printStackTrace();
+        }
+
+
     }
 
 }
