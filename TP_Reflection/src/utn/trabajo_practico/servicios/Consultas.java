@@ -1,6 +1,7 @@
 package utn.trabajo_practico.servicios;
 
 import utn.trabajo_practico.anotaciones.Columna;
+import utn.trabajo_practico.anotaciones.Compuesto;
 import utn.trabajo_practico.anotaciones.Id;
 import utn.trabajo_practico.anotaciones.Tabla;
 import utn.trabajo_practico.utilidades.UBean;
@@ -9,14 +10,19 @@ import utn.trabajo_practico.utilidades.UConexion;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class Consultas
 {
-    private static UConexion conexion;
+    static
+    {
+        System.out.println("CONEXION");
+    }
 
     public static Object guardar(Object o)
     {
@@ -34,22 +40,69 @@ public class Consultas
             // Se enlazan valores de los atributos del objeto recibido
             for (Field atributo: atributos)
             {
-                Columna columna = (Columna) atributo.getAnnotation(Columna.class);
+                System.out.println(atributo.getName());
+                Columna columna = atributo.getAnnotation(Columna.class);
                 columnas += columna.nombre() + ",";
-                valores += ubean.ejecutarGet(o,atributo.getName()) + ",";
+
+                System.out.println(columnas);
+
+                if(atributo.getAnnotation(Compuesto.class) != null)
+                {
+                    System.out.println("Atributo compuesto");
+                    Constructor[] constructores = atributo.getType().getConstructors();
+                    Field[] auxiliarAtributos = atributo.getType().getDeclaredFields();
+                    // Busco el constructor con todos los argumentos
+                    Constructor constructor = Arrays.stream(constructores)
+                                                              .filter(con -> con.getParameterCount() == auxiliarAtributos.length).findAny().orElse(null);
+                    Object[] arguments = new Object[constructor.getParameterTypes().length];
+
+                    for (int i = 0; i < auxiliarAtributos.length; i++)
+                    {
+                        System.out.println(auxiliarAtributos[i].getName());
+                        String nameAttribute = auxiliarAtributos[i].getName().substring(0,1).toUpperCase() + auxiliarAtributos[i].getName().substring(1);
+                        Method[] methods = atributo.getType().getDeclaredMethods();
+
+                        for (Method method: methods)
+                        {
+                            if(method.getName().startsWith("get" + nameAttribute))
+                            {
+                                //FIXME Pasar valores de los atributos del objeto
+                                arguments[i] = method.invoke(o);
+                            }
+                        }
+                    }
+                    Object claseAtributo = constructor.newInstance(arguments);
+
+                    for (Field atributoCompuesto: auxiliarAtributos)
+                    {
+                        System.out.println(atributoCompuesto.getName());
+                        if(atributoCompuesto.getAnnotation(Id.class) != null)
+                        {
+                            valores += "'" + ubean.ejecutarGet(claseAtributo,atributoCompuesto.getName()) + "',";
+                        }
+                    }
+                    //Consultas.guardar(claseAtributo);
+                }
+                else
+                {
+                    valores += "'" + ubean.ejecutarGet(o,atributo.getName()) + "',";
+                }
             }
             columnas += ") ";
             valores += ")";
             query += columnas + "values" + valores + ";";
+            System.out.println(query);
 
-            PreparedStatement insert = Consultas.conexion.getConnection()
+            PreparedStatement insert = UConexion.getInstance().getConnection()
                                                          .prepareStatement(query,Statement.RETURN_GENERATED_KEYS);
+            System.out.println("INSERT");
             insert.execute();
             ResultSet generatedKeys = insert.getGeneratedKeys();
             if(generatedKeys.next())
             {
                 for (Field atributo: atributos)
                 {
+
                     if(atributo.getAnnotation(Id.class) != null)
                     {
                         Columna columna = atributo.getAnnotation(Columna.class);
@@ -110,7 +163,7 @@ public class Consultas
                 query += columna.nombre() + " = " + ubean.ejecutarGet(o,atributo.getName()) + ",";
             }
 
-            PreparedStatement update = Consultas.conexion.getConnection().prepareStatement(query);
+            PreparedStatement update = UConexion.getInstance().getConnection().prepareStatement(query);
             update.execute();
         }
         catch (SQLException e)
@@ -136,7 +189,7 @@ public class Consultas
                     query += atributo.getName() + " = " + ubean.ejecutarGet(o,atributo.getName());
                 }
             }
-            PreparedStatement delete = Consultas.conexion.getConnection().prepareStatement(query);
+            PreparedStatement delete = UConexion.getInstance().getConnection().prepareStatement(query);
             delete.execute();
         }
         catch (SQLException e)
@@ -172,7 +225,7 @@ public class Consultas
             query += "FROM " + tabla.nombre() + " WHERE " + atributo_id + " = " + id + ";";
 
             // Ejecuto el SELECT
-            PreparedStatement select = Consultas.conexion.getConnection().prepareStatement(query);
+            PreparedStatement select = UConexion.getInstance().getConnection().prepareStatement(query);
             ResultSet result = select.executeQuery();
             Object[] arguments = new Object[parametros.length];
 
@@ -233,7 +286,7 @@ public class Consultas
             query += "FROM " + tabla.nombre() + ";";
 
             // Ejecuto el SELECT
-            PreparedStatement select = Consultas.conexion.getConnection().prepareStatement(query);
+            PreparedStatement select = UConexion.getInstance().getConnection().prepareStatement(query);
             ResultSet result = select.executeQuery();
 
             while(result.next())

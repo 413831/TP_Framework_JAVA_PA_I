@@ -2,19 +2,22 @@ package utn.trabajo_practico.utilidades;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 
 public class UBean
 {
     public ArrayList<Field> obtenerAtributos(Object objeto)
     {
-        ArrayList<Field> atributos = new ArrayList<Field>();
+        ArrayList<Field> listaAtributos = new ArrayList<Field>();
 
-        for (Field atributo : objeto.getClass().getFields())
+        Field[] atributos = objeto.getClass().getDeclaredFields();
+
+        for (Field atributo : atributos)
         {
-            atributos.add(atributo);
+            listaAtributos.add(atributo);
         }
-        return atributos;
+        return listaAtributos;
     }
 
     public void ejecutarSet(Object o, String att, Object valor)
@@ -41,21 +44,25 @@ public class UBean
     public Object ejecutarGet(Object o, String att)
     {
         Object value = new Object();
+        Method[] methods = o.getClass().getDeclaredMethods();
+        String attribute = att.substring(0,1).toUpperCase() + att.substring(1);
 
         try
         {
             // FIXME Mejorar
-            value = o.getClass().getMethod("get" + att,o.getClass()).invoke(o.getClass());
+            for (Method method: methods)
+            {
+                if(method.getName().startsWith("get" + attribute))
+                {
+                    value = method.invoke(o);
+                }
+            }
         }
         catch (IllegalAccessException e)
         {
             e.printStackTrace();
         }
         catch (InvocationTargetException e)
-        {
-            e.printStackTrace();
-        }
-        catch (NoSuchMethodException e)
         {
             e.printStackTrace();
         }

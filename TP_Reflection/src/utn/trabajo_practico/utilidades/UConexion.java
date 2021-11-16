@@ -54,20 +54,6 @@ public class UConexion
         return UConexion.miInstancia;
     }
 
-    public static void leer(File archivo) throws IOException
-    {
-        FileReader fileReader = new FileReader(archivo);
-        BufferedReader bufferedReader = new BufferedReader(fileReader);
-
-        String texto = "";
-        while((texto = bufferedReader.readLine()) != null)
-        {
-            //TODO Retornar String concatenado en vez de imprimir en método (SOLID)
-            System.out.println(texto);
-        }
-        fileReader.close();
-    }
-
     private JSONObject getConfiguration(String file)
     {
         JSONParser jsonParser = new JSONParser();
