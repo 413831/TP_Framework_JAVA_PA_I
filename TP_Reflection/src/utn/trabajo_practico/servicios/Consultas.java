@@ -271,7 +271,7 @@ public class Consultas
         return null;
     }
 
-    public ArrayList obtenerTodos(Class c)
+    public static ArrayList obtenerTodos(Class c)
     {
         try
         {
@@ -285,8 +285,9 @@ public class Consultas
                                                       .filter(con -> con.getParameterCount() == atributos.length)
                                                       .findFirst();
             Object[] parametros = constructor.get().getParameterTypes();
-            String query = "SELECT ";
-            String atributo_id = "";
+            String query = "SELECT * FROM " + tabla.nombre() + ";";
+            System.out.println(query);
+            /*String atributo_id = "";
             for (Field atributo: atributos)
             {
                 String nombreAtributo = atributo.getAnnotation(Columna.class).nombre();
@@ -296,7 +297,7 @@ public class Consultas
                     atributo_id = nombreAtributo;
                 }
             }
-            query += "FROM " + tabla.nombre() + ";";
+            */
 
             // Ejecuto el SELECT
             PreparedStatement select = UConexion.getInstance().getConnection().prepareStatement(query);
@@ -310,8 +311,12 @@ public class Consultas
                 {
                     // Se recupera valor del result con nombre de columna en orden de atributos de clase
                     arguments[i] = result.getObject(atributos[i].getAnnotation(Columna.class).nombre());
-                    list.add(constructor.get().newInstance(arguments));
+                    if(i == 0)
+                    {
+                        arguments[i] = new BigInteger(String.valueOf(arguments[i]));
+                    }
                 }
+                list.add(constructor.get().newInstance(arguments));
             }
             return list;
         }
