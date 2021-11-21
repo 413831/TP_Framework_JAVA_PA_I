@@ -5,19 +5,21 @@ import utn.trabajo_practico.anotaciones.Compuesto;
 import utn.trabajo_practico.anotaciones.Id;
 import utn.trabajo_practico.anotaciones.Tabla;
 
+import java.math.BigInteger;
 import java.util.Objects;
 
 @Tabla(nombre = "Personas")
 public class Persona
 {
     @Id
+    private BigInteger id;
     @Columna(nombre = "p_dni")
-    private Integer dni;
+    private String dni;
     @Columna(nombre = "p_nombre")
     private String nombre;
     @Columna(nombre = "p_apellido")
     private String apellido;
-    @Compuesto
+    @Compuesto(clazz = Domicilio.class)
     @Columna(nombre = "p_domicilio")
     private Domicilio domicilio;
     @Columna(nombre = "p_telefono")
@@ -28,7 +30,18 @@ public class Persona
     public Persona()
     {}
 
-    public Persona(Integer dni, String nombre, String apellido, Domicilio domicilio, Integer telefono, String email)
+    public Persona(BigInteger id, String dni, String nombre, String apellido, Domicilio domicilio, Integer telefono, String email)
+    {
+        this.id = id;
+        this.dni = dni;
+        this.nombre = nombre;
+        this.apellido = apellido;
+        this.domicilio = domicilio;
+        this.telefono = telefono;
+        this.email = email;
+    }
+
+    public Persona(String dni, String nombre, String apellido, Domicilio domicilio, Integer telefono, String email)
     {
         this.dni = dni;
         this.nombre = nombre;
@@ -58,12 +71,12 @@ public class Persona
         this.apellido = apellido;
     }
 
-    public Integer getDni()
+    public String getDni()
     {
         return dni;
     }
 
-    public void setDni(Integer dni)
+    public void setDni(String dni)
     {
         this.dni = dni;
     }
@@ -98,6 +111,16 @@ public class Persona
         this.email = email;
     }
 
+    public BigInteger getId()
+    {
+        return id;
+    }
+
+    public void setId(BigInteger id)
+    {
+        this.id = id;
+    }
+
     @Override
     public String toString()
     {
@@ -126,4 +149,6 @@ public class Persona
     {
         return Objects.hash(getNombre(), getApellido(), getDni(), getDomicilio(), getTelefono(), getEmail());
     }
+
+
 }

@@ -4,6 +4,7 @@ import utn.trabajo_practico.anotaciones.Columna;
 import utn.trabajo_practico.anotaciones.Id;
 import utn.trabajo_practico.anotaciones.Tabla;
 
+import java.math.BigInteger;
 import java.util.Objects;
 
 @Tabla(nombre = "Direcciones")
@@ -11,7 +12,7 @@ public class Domicilio
 {
     @Id
     @Columna(nombre = "d_id")
-    private String id;
+    private BigInteger id;
     @Columna(nombre = "d_calle")
     private String calle;
     @Columna(nombre = "d_altura")
@@ -26,7 +27,15 @@ public class Domicilio
 
     }
 
-    public Domicilio(String id, String calle, Integer altura, Integer codigoPostal, String localidad)
+    public Domicilio(String calle, Integer altura, Integer codigoPostal, String localidad)
+    {
+        this.calle = calle;
+        this.altura = altura;
+        this.codigoPostal = codigoPostal;
+        this.localidad = localidad;
+    }
+
+    public Domicilio(BigInteger id, String calle, Integer altura, Integer codigoPostal, String localidad)
     {
         this.id = id;
         this.calle = calle;
@@ -35,12 +44,12 @@ public class Domicilio
         this.localidad = localidad;
     }
 
-    public String getId()
+    public BigInteger getId()
     {
         return id;
     }
 
-    public void setId(String id)
+    public void setId(BigInteger id)
     {
         this.id = id;
     }

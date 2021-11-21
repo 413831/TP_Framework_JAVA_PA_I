@@ -6,4 +6,5 @@ import java.lang.annotation.*;
 @Target(ElementType.FIELD)
 public @interface Compuesto
 {
+    Class clazz();
 }

@@ -50,24 +50,25 @@ public class Consultas
                 columnas += columna.nombre() + ",";
 
                 System.out.println(valores);
-/*
+
                 if(atributo.getAnnotation(Compuesto.class) != null)
                 {
-
-                }
-                else
-                {
-                    valores += "'" + ubean.ejecutarGet(o,atributo.getName()) + "',";
-                }
-
- */
-                if(atributo.getAnnotation(Compuesto.class) != null)
-                {
+                    /*
                     Object valorCompuesto = ubean.ejecutarGet(o, atributo.getName());
                     String[] attAux = String.valueOf(valorCompuesto).split("\'");
                     String idCompuesto = attAux[1];
                     System.out.println(idCompuesto);
                     valores += "'" + idCompuesto + "',";
+                    */
+                    // Cast Field to Object type
+                    atributo.trySetAccessible();
+                    Object atributoCompuesto = atributo.get(o);
+                    System.out.println("atributoCompuesto = " + atributoCompuesto);
+
+                    atributoCompuesto = Consultas.guardar(atributoCompuesto);
+                    Field nombreIdCompuesto = Arrays.stream(atributoCompuesto.getClass().getDeclaredFields()).filter(f -> f.getAnnotation(Id.class) != null).findFirst().get();
+                    Object idAtributoCompuesto = ubean.ejecutarGet(atributoCompuesto, nombreIdCompuesto.getName());
+                    valores += idAtributoCompuesto + ",";
                 }
                 else if(atributo.getType().equals(Integer.class))
                 {
@@ -97,7 +98,6 @@ public class Consultas
                     if(atributo.getAnnotation(Id.class) != null)
                     {
                         o = ubean.ejecutarSet(o,atributo.getName(),generatedKeys.getObject(1));
-                        System.out.println("GUARDAR -> " + o);
                     }
                 }
             }
@@ -109,6 +109,10 @@ public class Consultas
         catch (ClassCastException ex)
         {
             ex.printStackTrace();
+        }
+        catch (IllegalAccessException e)
+        {
+            e.printStackTrace();
         }
         return o;
     }
@@ -287,17 +291,6 @@ public class Consultas
             Object[] parametros = constructor.get().getParameterTypes();
             String query = "SELECT * FROM " + tabla.nombre() + ";";
             System.out.println(query);
-            /*String atributo_id = "";
-            for (Field atributo: atributos)
-            {
-                String nombreAtributo = atributo.getAnnotation(Columna.class).nombre();
-                query += nombreAtributo + ",";
-                if(atributo.getAnnotation(Id.class) != null)
-                {
-                    atributo_id = nombreAtributo;
-                }
-            }
-            */
 
             // Ejecuto el SELECT
             PreparedStatement select = UConexion.getInstance().getConnection().prepareStatement(query);
@@ -339,7 +332,7 @@ public class Consultas
         return null;
     }
 
-    public void guardarCompuesto(Field atributo)
+    public static void guardarCompuesto(Field atributo)
     {
         try
         {
@@ -366,8 +359,6 @@ public class Consultas
                         //FIXME Pasar valores de los atributos del objeto
 
                         arguments[i] = method.invoke(atributo);
-
-
                     }
                 }
             }
@@ -398,5 +389,6 @@ public class Consultas
 
 
     }
+
 
 }
