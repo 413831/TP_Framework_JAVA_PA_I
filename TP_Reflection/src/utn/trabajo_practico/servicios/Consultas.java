@@ -11,6 +11,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.math.BigInteger;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -112,18 +113,18 @@ public class Consultas
         return o;
     }
 
-    public Object guardarModificar(Object o)
+    public static Object guardarModificar(Object o)
     {
         UBean ubean = new UBean();
         ArrayList<Field> atributos = ubean.obtenerAtributos(o);
-        Object id = "";
+        Object id = new Object();
 
         for (Field atributo: atributos)
         {
             if(atributo.getAnnotation(Id.class) != null)
             {
                 Columna columna = atributo.getAnnotation(Columna.class);
-                id = atributo.toString();
+                id = ubean.ejecutarGet(o,atributo.getName());
             }
         }
         if(Consultas.obtenerPorId(o.getClass(),id) != null)
@@ -242,6 +243,10 @@ public class Consultas
                 {
                     // Se recupera valor del result con nombre de columna en orden de atributos de clase
                     arguments[i] = result.getObject(atributos[i].getAnnotation(Columna.class).nombre());
+                    if(i == 0)
+                    {
+                        arguments[i] = new BigInteger(String.valueOf(arguments[i]));
+                    }
                 }
             }
 
