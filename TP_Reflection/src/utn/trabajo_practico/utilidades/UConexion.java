@@ -8,36 +8,36 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
+/**
+ * @author Alejandro Planes
+ * @version 1.0
+ */
 public class UConexion
 {
     private static UConexion miInstancia;
+    private static final String CONFIG_FILE = "framework.properties.json";
     private Connection connection;
 
+    /**
+     * Constructor privado para Singleton
+     * Se levanta configuración de conexión desde archivo
+     */
     private UConexion()
     {
         try
         {
-            File directory = new File("./");
-            System.out.println(directory.getAbsolutePath());
-            JSONObject configuration = this.getConfiguration("framework.properties.json");
-            System.out.println("Configuracion");
-            //Class.forName("com.mysql.cj.jdbc.Driver");
-            Class.forName(configuration.get("DRIVER").toString());
-            //this.connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/test", "root", "admin");
-            this.connection = DriverManager.getConnection(configuration.get("DB").toString(),
-                                                          configuration.get("USER").toString(),
-                                                          configuration.get("PASSWORD").toString());
-            System.out.println("Conexion");
-            System.out.println(this.connection.getMetaData());
-            System.out.println(this.connection.getCatalog());
+            JSONObject configuration = this.getConfiguration(CONFIG_FILE);
+            if(configuration != null)
+            {
+                Class.forName(configuration.get("DRIVER").toString());
+                this.connection = DriverManager.getConnection(configuration.get("DB").toString(),
+                                                              configuration.get("USER").toString(),
+                                                              configuration.get("PASSWORD").toString());
+            }
         }
-        catch (NullPointerException e)
+        catch (NullPointerException | SQLException e)
         {
             e.printStackTrace();
-        }
-        catch (SQLException throwables)
-        {
-            throwables.printStackTrace();
         }
         catch (ClassNotFoundException e)
         {
@@ -45,6 +45,10 @@ public class UConexion
         }
     }
 
+    /**
+     * Método para obtener una instancia de UConexion por Singleton
+     * @return Si la instancia es null se inicializa sino returna la instancia estática
+     */
     public static UConexion getInstance()
     {
         if(UConexion.miInstancia == null)
@@ -54,6 +58,11 @@ public class UConexion
         return UConexion.miInstancia;
     }
 
+    /**
+     * Método para leer información de archivo de configuración
+     * @param file Archivo de configuración de conexión
+     * @return Retorna un Objeto JSON sino retorna null
+     */
     private JSONObject getConfiguration(String file)
     {
         JSONParser jsonParser = new JSONParser();
@@ -78,8 +87,12 @@ public class UConexion
         return null;
     }
 
+    /**
+     * Setter de atributo private Connection
+     * @return Retorna el valor del atributo connection
+     */
     public Connection getConnection()
     {
-        return connection;
+        return this.connection;
     }
 }

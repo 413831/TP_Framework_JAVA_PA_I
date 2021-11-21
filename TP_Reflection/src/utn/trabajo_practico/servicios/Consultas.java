@@ -1,5 +1,7 @@
 package utn.trabajo_practico.servicios;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import utn.trabajo_practico.anotaciones.Columna;
 import utn.trabajo_practico.anotaciones.Compuesto;
 import utn.trabajo_practico.anotaciones.Id;
@@ -10,35 +12,37 @@ import utn.trabajo_practico.utilidades.UConexion;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
+/**
+ * @author Alejandro Planes
+ * @version 1.0
+ */
 public class Consultas
 {
-    static
-    {
-        System.out.println("CONEXION");
-    }
-
-    public static Object guardar(Object o)
+    /**
+     * Método para guardar un objeto en la base de datos
+     * @param object Objeto que se desea guardar en la base de datos
+     * @return Retorna el objeto guardado con el Id generado por la base de datos
+     */
+    public static Object guardar(Object object)
     {
         try
         {
             UBean ubean = new UBean();
-            // Obtengo la tabla asociada a la clase del objeto
-            Tabla tabla = (Tabla) ubean.obtenerAnotaciones(o, Tabla.class);
-            // Se obtienen nombre de atributos
-            ArrayList<Field> atributos = ubean.obtenerAtributos(o);
-            // Construccion de consulta
-            String query = "INSERT INTO " + tabla.nombre();
-            String columnas = " (";
-            String valores = " (";
-            // Se enlazan valores de los atributos del objeto recibido
+            // DB Table for object Class
+            Tabla table = (Tabla) ubean.obtenerAnotaciones(object, Tabla.class);
+            // Class declared attributes
+            ArrayList<Field> atributos = ubean.obtenerAtributos(object);
+            // Query initialization
+            String query = "INSERT INTO " + table.nombre();
+            String columns = " (";
+            String values = " (";
+            // Gathering columns and values for the query
             for (Field atributo: atributos)
             {
                 if(atributo.getAnnotation(Id.class) != null)
@@ -47,57 +51,43 @@ public class Consultas
                 }
                 System.out.println(atributo.getName());
                 Columna columna = atributo.getAnnotation(Columna.class);
-                columnas += columna.nombre() + ",";
-
-                System.out.println(valores);
+                columns += columna.nombre() + ",";
 
                 if(atributo.getAnnotation(Compuesto.class) != null)
                 {
-                    /*
-                    Object valorCompuesto = ubean.ejecutarGet(o, atributo.getName());
-                    String[] attAux = String.valueOf(valorCompuesto).split("\'");
-                    String idCompuesto = attAux[1];
-                    System.out.println(idCompuesto);
-                    valores += "'" + idCompuesto + "',";
-                    */
-                    // Cast Field to Object type
-                    atributo.trySetAccessible();
-                    Object atributoCompuesto = atributo.get(o);
-                    System.out.println("atributoCompuesto = " + atributoCompuesto);
-
-                    atributoCompuesto = Consultas.guardar(atributoCompuesto);
-                    Field nombreIdCompuesto = Arrays.stream(atributoCompuesto.getClass().getDeclaredFields()).filter(f -> f.getAnnotation(Id.class) != null).findFirst().get();
-                    Object idAtributoCompuesto = ubean.ejecutarGet(atributoCompuesto, nombreIdCompuesto.getName());
-                    valores += idAtributoCompuesto + ",";
+                    Object idAttribute = Consultas.guardarCompuesto(object,atributo);
+                    values += idAttribute + ",";
                 }
                 else if(atributo.getType().equals(Integer.class))
                 {
-                    valores += ubean.ejecutarGet(o,atributo.getName()) + ",";
+                    values += ubean.ejecutarGet(object,atributo.getName()) + ",";
                 }
                 else
                 {
-                    valores += "'" + ubean.ejecutarGet(o,atributo.getName()) + "',";
+                    values += "'" + ubean.ejecutarGet(object,atributo.getName()) + "',";
                 }
             }
-            columnas = columnas.substring(0,columnas.length()-1);
-            columnas += ") ";
-            valores = valores.substring(0,valores.length()-1);
-            valores += ")";
-            query += columnas + "VALUES" + valores + ";";
+            columns = columns.substring(0,columns.length()-1);
+            columns += ") ";
+            values = values.substring(0,values.length()-1);
+            values += ")";
+            // Query creation
+            query += columns + "VALUES" + values + ";";
             System.out.println(query);
 
             PreparedStatement insert = UConexion.getInstance().getConnection()
                                                          .prepareStatement(query,Statement.RETURN_GENERATED_KEYS);
-            System.out.println("INSERT");
+            // Query execution
             insert.execute();
+            // Query generated keys to set object ID
             ResultSet generatedKeys = insert.getGeneratedKeys();
             if(generatedKeys.first())
             {
-                for (Field atributo: atributos)
+                for (Field attribute: atributos)
                 {
-                    if(atributo.getAnnotation(Id.class) != null)
+                    if(attribute.getAnnotation(Id.class) != null)
                     {
-                        o = ubean.ejecutarSet(o,atributo.getName(),generatedKeys.getObject(1));
+                        object = ubean.ejecutarSet(object,attribute.getName(),generatedKeys.getObject(1));
                     }
                 }
             }
@@ -110,47 +100,55 @@ public class Consultas
         {
             ex.printStackTrace();
         }
-        catch (IllegalAccessException e)
-        {
-            e.printStackTrace();
-        }
-        return o;
+        return object;
     }
 
-    public static Object guardarModificar(Object o)
+    /**
+     * Método para guardar o actualizar un objeto en la base de datos
+     * @param object Objeto que se desea guardar en la base de datis
+     * @return Retorna el objeto guardado en la base de datos o el objeto actualizado en la misma
+     */
+    public static Object guardarModificar(Object object)
     {
         UBean ubean = new UBean();
-        ArrayList<Field> atributos = ubean.obtenerAtributos(o);
+        ArrayList<Field> atributos = ubean.obtenerAtributos(object);
         Object id = new Object();
 
         for (Field atributo: atributos)
         {
             if(atributo.getAnnotation(Id.class) != null)
             {
-                Columna columna = atributo.getAnnotation(Columna.class);
-                id = ubean.ejecutarGet(o,atributo.getName());
+                id = ubean.ejecutarGet(object,atributo.getName());
             }
         }
-        if(Consultas.obtenerPorId(o.getClass(),id) != null)
+        if(Consultas.obtenerPorId(object.getClass(),id) != null)
         {
-            Consultas.modificar(o);
+            // Query method execution
+            object = Consultas.modificar(object);
         }
         else
         {
-            o = Consultas.guardar(o);
+            // Query method execution
+            object = Consultas.guardar(object);
         }
-        return o;
+        return object;
     }
 
-    public static void modificar(Object o)
+    /**
+     * Método para modificar un objeto en la base de datos
+     * @param object Objeto a modificar
+     * @return Retorna el objeto modificado
+     */
+    public static Object modificar(Object object)
     {
         try
         {
             UBean ubean = new UBean();
-            Tabla tabla = (Tabla) ubean.obtenerAnotaciones(o, Tabla.class);
-            ArrayList<Field> atributos = ubean.obtenerAtributos(o);
-
+            Tabla tabla = (Tabla) ubean.obtenerAnotaciones(object, Tabla.class);
+            ArrayList<Field> atributos = ubean.obtenerAtributos(object);
+            // Query initialization
             String query = "UPDATE " + tabla.nombre() + " SET ";
+            // Query filter initialization
             String filter = " WHERE ";
 
             for (Field atributo: atributos)
@@ -158,68 +156,82 @@ public class Consultas
                 Columna columna = atributo.getAnnotation(Columna.class);
                 if(atributo.getAnnotation(Id.class) != null)
                 {
-                    filter += columna.nombre() +  " = '" + ubean.ejecutarGet(o,atributo.getName()) + "';";
+                    filter += columna.nombre() +  " = '" + ubean.ejecutarGet(object,atributo.getName()) + "';";
                 }
                 else if(atributo.getClass().equals(Integer.class))
                 {
-                    query += columna.nombre() + " = " + ubean.ejecutarGet(o,atributo.getName()) + ",";
+                    query += columna.nombre() + " = " + ubean.ejecutarGet(object,atributo.getName()) + ",";
                 }
                 else
                 {
-                    query += columna.nombre() + " = '" + ubean.ejecutarGet(o,atributo.getName()) + "',";
+                    query += columna.nombre() + " = '" + ubean.ejecutarGet(object,atributo.getName()) + "',";
                 }
             }
             query = query.substring(0,query.length()-1);
-            System.out.println(query + filter);
             PreparedStatement update = UConexion.getInstance().getConnection().prepareStatement(query + filter);
+            // Query execution
             update.execute();
         }
         catch (SQLException e)
         {
             e.printStackTrace();
         }
+        return object;
     }
 
-    public static void eliminar(Object o)
+    /**
+     * Método para eliminar un objeto de la base de datos
+     * @param object Objeto a eliminar
+     * @return Retorna true si se logró eliminar de lo contrario false
+     */
+    public static boolean eliminar(Object object)
     {
         try
         {
             UBean ubean = new UBean();
-            ArrayList<Field> atributos = ubean.obtenerAtributos(o);
-            Tabla tabla = (Tabla) ubean.obtenerAnotaciones(o,Tabla.class);
-
+            ArrayList<Field> atributos = ubean.obtenerAtributos(object);
+            Tabla tabla = (Tabla) ubean.obtenerAnotaciones(object,Tabla.class);
+            // Query initialization
             String query = "DELETE FROM " + tabla.nombre() + " WHERE ";
 
             for (Field atributo: atributos)
             {
                 if(atributo.getAnnotation(Id.class) != null)
                 {
-                    query += atributo.getAnnotation(Columna.class).nombre() + " = " + ubean.ejecutarGet(o,atributo.getName());
+                    query += atributo.getAnnotation(Columna.class).nombre() + " = " + ubean.ejecutarGet(object,atributo.getName());
                 }
             }
             System.out.println("DELETE");
             PreparedStatement delete = UConexion.getInstance().getConnection().prepareStatement(query);
-            delete.execute();
+            // Query execution
+            return delete.execute();
         }
         catch (SQLException e)
         {
             e.printStackTrace();
         }
+        return false;
     }
 
-    public static Object obtenerPorId(Class c, Object id)
+    /**
+     * Método para obtener un objeto por su ID
+     * @param clazz Clase del objeto que se desea recuperar
+     * @param id Id del objeto a recuperar
+     * @return Retorna una instancia de la Clase recibida por parámetro
+     */
+    public static @Nullable Object obtenerPorId(@NotNull Class clazz, Object id)
     {
         try
         {
-            UBean ubean = new UBean();
-            Tabla tabla = (Tabla) c.getAnnotation(Tabla.class);
-            Field[] atributos = c.getDeclaredFields();
-            Constructor[] constructores = c.getConstructors();
-            // Busco el constructor con todos los argumentos
+            Tabla table = (Tabla) clazz.getAnnotation(Tabla.class);
+            Field[] atributos = clazz.getDeclaredFields();
+            Constructor[] constructores = clazz.getConstructors();
+            // Get the constructor with all attributes
             Optional<Constructor> constructor = Arrays.stream(constructores)
                                                       .filter(con -> con.getParameterCount() == atributos.length)
                                                       .findFirst();
             Object[] parametros = constructor.get().getParameterTypes();
+            // Query initialization
             String query = "SELECT ";
             String atributo_id = "";
             for (Field atributo: atributos)
@@ -232,21 +244,23 @@ public class Consultas
                 }
             }
             query = query.substring(0,query.length()-1);
-            query += " FROM " + tabla.nombre() + " WHERE " + atributo_id + " = " + id + ";";
+            // Query construction
+            query += " FROM " + table.nombre() + " WHERE " + atributo_id + " = " + id + ";";
 
             System.out.println(query);
-            // Ejecuto el SELECT
+            // Query execution
             System.out.println("SELECT");
             PreparedStatement select = UConexion.getInstance().getConnection().prepareStatement(query);
             ResultSet result = select.executeQuery();
             Object[] arguments = new Object[parametros.length];
-
+            // Iteration over query ResultSet
             while(result.next())
             {
                 for (int i = 0; i < atributos.length; i++)
                 {
-                    // Se recupera valor del result con nombre de columna en orden de atributos de clase
+                    // Retrieving ResultSet values with columns name in order
                     arguments[i] = result.getObject(atributos[i].getAnnotation(Columna.class).nombre());
+                    // Autogenerated ID casting
                     if(i == 0)
                     {
                         arguments[i] = new BigInteger(String.valueOf(arguments[i]));
@@ -275,24 +289,27 @@ public class Consultas
         return null;
     }
 
-    public static ArrayList obtenerTodos(Class c)
+    /**
+     * Método para obtener todos los objetos de una tabla
+     * @param clazz Clase de la cual se desea obtener objetos
+     * @return Retorna un ArrayList con todos los objetos encontrados o un ArrayList vacío
+     */
+    public static @Nullable ArrayList obtenerTodos(@NotNull Class clazz)
     {
         try
         {
             ArrayList<Object> list = new ArrayList<Object>();
-            UBean ubean = new UBean();
-            Tabla tabla = (Tabla) c.getAnnotation(Tabla.class);
-            Field[] atributos = c.getDeclaredFields();
-            Constructor[] constructores = c.getConstructors();
-            // Busco el constructor con todos los argumentos
+            Tabla table = (Tabla) clazz.getAnnotation(Tabla.class);
+            Field[] atributos = clazz.getDeclaredFields();
+            Constructor[] constructores = clazz.getConstructors();
+            // Get the constructor with all attributes
             Optional<Constructor> constructor = Arrays.stream(constructores)
                                                       .filter(con -> con.getParameterCount() == atributos.length)
                                                       .findFirst();
             Object[] parametros = constructor.get().getParameterTypes();
-            String query = "SELECT * FROM " + tabla.nombre() + ";";
+            String query = "SELECT * FROM " + table.nombre() + ";";
             System.out.println(query);
-
-            // Ejecuto el SELECT
+            // Query execution
             PreparedStatement select = UConexion.getInstance().getConnection().prepareStatement(query);
             ResultSet result = select.executeQuery();
 
@@ -302,8 +319,9 @@ public class Consultas
 
                 for (int i = 0; i < atributos.length; i++)
                 {
-                    // Se recupera valor del result con nombre de columna en orden de atributos de clase
+                    // Retrieving ResultSet values with columns name in order
                     arguments[i] = result.getObject(atributos[i].getAnnotation(Columna.class).nombre());
+                    // Autogenerated ID casting
                     if(i == 0)
                     {
                         arguments[i] = new BigInteger(String.valueOf(arguments[i]));
@@ -332,63 +350,32 @@ public class Consultas
         return null;
     }
 
-    public static void guardarCompuesto(Field atributo)
+    /**
+     * Método para guardar un atributo tipo Object en la base de datos
+     * @param object Objeto del cual se obtiene el atributo tipo Object
+     * @param attribute Atributo para guardar
+     * @return Retorna el ID generado por la base de datos del atributo guardado
+     */
+    public static Object guardarCompuesto(Object object, @NotNull Field attribute)
     {
         try
         {
-            System.out.println("Atributo compuesto");
-            String valores = "";
             UBean ubean = new UBean();
-            Constructor[] constructores = atributo.getType().getConstructors();
-            Field[] auxiliarAtributos = atributo.getType().getDeclaredFields();
-            // Busco el constructor con todos los argumentos
-            Constructor constructor = Arrays.stream(constructores)
-                                            .filter(con -> con.getParameterCount() == auxiliarAtributos.length).findAny().orElse(null);
-            Object[] arguments = new Object[constructor.getParameterTypes().length];
+            attribute.trySetAccessible();
+            // Cast Field to Object type
+            Object attributeObject = attribute.get(object);
+            // Query method execution
+            attributeObject = Consultas.guardar(attributeObject);
+            // Getting the object ID value with its getters using ubean helper class
+            Field nombreIdCompuesto = Arrays.stream(attributeObject.getClass().getDeclaredFields()).filter(f -> f.getAnnotation(Id.class) != null).findFirst().get();
+            Object idAttributeObject = ubean.ejecutarGet(attributeObject, nombreIdCompuesto.getName());
 
-            for (int i = 0; i < auxiliarAtributos.length; i++)
-            {
-                System.out.println(auxiliarAtributos[i].getName());
-                String nameAttribute = auxiliarAtributos[i].getName().substring(0,1).toUpperCase() + auxiliarAtributos[i].getName().substring(1);
-                Method[] methods = atributo.getType().getDeclaredMethods();
-
-                for (Method method: methods)
-                {
-                    if(method.getName().startsWith("get" + nameAttribute))
-                    {
-                        //FIXME Pasar valores de los atributos del objeto
-
-                        arguments[i] = method.invoke(atributo);
-                    }
-                }
-            }
-            Object claseAtributo = constructor.newInstance(arguments);
-
-            for (Field atributoCompuesto: auxiliarAtributos)
-            {
-                System.out.println(atributoCompuesto.getName());
-                if(atributoCompuesto.getAnnotation(Id.class) != null)
-                {
-                    valores += "'" + ubean.ejecutarGet(claseAtributo,atributoCompuesto.getName()) + "',";
-                }
-            }
-            Consultas.guardar(claseAtributo);
-        }
-        catch (InvocationTargetException e)
-        {
-            e.printStackTrace();
+            return idAttributeObject;
         }
         catch (IllegalAccessException e)
         {
             e.printStackTrace();
         }
-        catch (InstantiationException e)
-        {
-            e.printStackTrace();
-        }
-
-
+        return new Object();
     }
-
-
 }
