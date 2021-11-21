@@ -3,7 +3,10 @@ package utn.trabajo_practico.utilidades;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Optional;
 
 public class UBean
 {
@@ -20,16 +23,20 @@ public class UBean
         return listaAtributos;
     }
 
-    public void ejecutarSet(Object o, String att, Object valor)
+    public Object ejecutarSet(Object o, String att, Object valor)
     {
+        Method[] methods = o.getClass().getDeclaredMethods();
+        String attribute = att.substring(0,1).toUpperCase() + att.substring(1);
+
         try
         {
-            // FIXME Mejorar
-            o.getClass().getMethod("set" + att,o.getClass()).invoke(o.getClass(),valor);
-        }
-        catch (NoSuchMethodException e)
-        {
-            e.printStackTrace();
+            for (Method method: methods)
+            {
+                if(method.getName().startsWith("set" + attribute))
+                {
+                    method.invoke(o, valor);
+                }
+            }
         }
         catch (InvocationTargetException e)
         {
@@ -39,6 +46,7 @@ public class UBean
         {
             e.printStackTrace();
         }
+        return o;
     }
 
     public Object ejecutarGet(Object o, String att)
@@ -49,7 +57,6 @@ public class UBean
 
         try
         {
-            // FIXME Mejorar
             for (Method method: methods)
             {
                 if(method.getName().startsWith("get" + attribute))

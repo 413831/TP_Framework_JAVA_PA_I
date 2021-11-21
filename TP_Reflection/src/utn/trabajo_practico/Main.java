@@ -16,14 +16,16 @@ public class Main {
     {
         System.out.println("MAIN");
         Persona persona = new Persona(33222111,"Pepito","Gomez",new Domicilio("CALLE1234","Calle",1234,222,"CABA"),113232322,"mail@mail.com");
-        Auto auto = new Auto(2,"BMW", "4000", 268000);
+        Auto auto = new Auto("Ford", "Focus", 88000);
 
-        Consultas.modificar(auto);
+        System.out.println(Consultas.guardar(auto));
 
         // TEST
         //Auto nuevoAuto = (Auto) Consultas.obtenerPorId(Auto.class, auto.getId());
         //System.out.println("nuevoAuto = " + nuevoAuto);
-        // Consultas.guardar(auto);
+        // System.out.println(Consultas.obtenerPorId(Auto.class,2));
+        // Consultas.modificar(auto);
+
         // Consultas.eliminar(persona);
 
     }

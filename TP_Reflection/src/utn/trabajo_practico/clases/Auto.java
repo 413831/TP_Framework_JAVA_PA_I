@@ -4,6 +4,7 @@ import utn.trabajo_practico.anotaciones.Columna;
 import utn.trabajo_practico.anotaciones.Id;
 import utn.trabajo_practico.anotaciones.Tabla;
 
+import java.math.BigInteger;
 import java.util.Objects;
 
 @Tabla(nombre = "Autos")
@@ -11,7 +12,7 @@ public class Auto
 {
     @Id
     @Columna(nombre = "a_id")
-    private Integer id;
+    private BigInteger id;
     @Columna(nombre = "a_marca")
     private String marca;
     @Columna(nombre = "a_modelo")
@@ -24,7 +25,14 @@ public class Auto
 
     }
 
-    public Auto(Integer id, String marca, String modelo, Integer precio)
+    public Auto(String marca, String modelo, Integer precio)
+    {
+        this.marca = marca;
+        this.modelo = modelo;
+        this.precio = precio;
+    }
+
+    public Auto(BigInteger id, String marca, String modelo, Integer precio)
     {
         this.id = id;
         this.marca = marca;
@@ -32,12 +40,12 @@ public class Auto
         this.precio = precio;
     }
 
-    public Integer getId()
+    public BigInteger getId()
     {
         return id;
     }
 
-    public void setId(Integer id)
+    public void setId(BigInteger id)
     {
         this.id = id;
     }

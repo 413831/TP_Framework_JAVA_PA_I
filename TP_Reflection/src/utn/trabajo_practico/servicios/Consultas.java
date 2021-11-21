@@ -40,6 +40,10 @@ public class Consultas
             // Se enlazan valores de los atributos del objeto recibido
             for (Field atributo: atributos)
             {
+                if(atributo.getAnnotation(Id.class) != null)
+                {
+                    continue;
+                }
                 System.out.println(atributo.getName());
                 Columna columna = atributo.getAnnotation(Columna.class);
                 columnas += columna.nombre() + ",";
@@ -85,16 +89,14 @@ public class Consultas
             System.out.println("INSERT");
             insert.execute();
             ResultSet generatedKeys = insert.getGeneratedKeys();
-            if(generatedKeys.next())
+            if(generatedKeys.first())
             {
                 for (Field atributo: atributos)
                 {
-
                     if(atributo.getAnnotation(Id.class) != null)
                     {
-                        Columna columna = atributo.getAnnotation(Columna.class);
-
-                        ubean.ejecutarSet(o,atributo.getName(),generatedKeys.getObject(columna.nombre()));
+                        o = ubean.ejecutarSet(o,atributo.getName(),generatedKeys.getObject(1));
+                        System.out.println("GUARDAR -> " + o);
                     }
                 }
             }
@@ -107,10 +109,7 @@ public class Consultas
         {
             ex.printStackTrace();
         }
-        finally
-        {
-            return o;
-        }
+        return o;
     }
 
     public Object guardarModificar(Object o)
