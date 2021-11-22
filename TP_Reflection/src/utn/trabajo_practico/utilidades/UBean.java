@@ -106,9 +106,15 @@ public class UBean
     public Object obtenerAnotaciones(@NotNull Object object, Class anotacion)
     {
         Object objetoAnotacion = new Object();
-
-        objetoAnotacion = object.getClass().getAnnotation(anotacion);
-
+        try
+        {
+            objetoAnotacion = object.getClass().getAnnotation(anotacion);
+            return objetoAnotacion;
+        }
+        catch (NullPointerException ex)
+        {
+            ex.printStackTrace();
+        }
         return objetoAnotacion;
     }
 

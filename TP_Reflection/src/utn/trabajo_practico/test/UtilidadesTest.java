@@ -46,7 +46,8 @@ public class UtilidadesTest
         {
             UBean ubean = new UBean();
             Auto auto = new Auto(new BigInteger(String.valueOf(35)), "Ford", "Focus", 123400);
-            Object valor = ubean.ejecutarGet(auto, "Id");
+            String atributoBuscado = "Id";
+            Object valor = ubean.ejecutarGet(auto, atributoBuscado);
 
             Assert.assertEquals(auto.getId(),valor);
         }

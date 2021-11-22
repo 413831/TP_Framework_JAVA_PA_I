@@ -1,0 +1,1 @@
+packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"utn.trabajo_practico"},{"l":"utn.trabajo_practico.anotaciones"},{"l":"utn.trabajo_practico.clases"},{"l":"utn.trabajo_practico.servicios"},{"l":"utn.trabajo_practico.test"},{"l":"utn.trabajo_practico.utilidades"}];updateSearchResults();

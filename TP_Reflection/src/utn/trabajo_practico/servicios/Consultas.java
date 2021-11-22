@@ -2,12 +2,8 @@ package utn.trabajo_practico.servicios;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import utn.trabajo_practico.anotaciones.Columna;
-import utn.trabajo_practico.anotaciones.Compuesto;
-import utn.trabajo_practico.anotaciones.Id;
-import utn.trabajo_practico.anotaciones.Tabla;
-import utn.trabajo_practico.utilidades.UBean;
-import utn.trabajo_practico.utilidades.UConexion;
+import utn.trabajo_practico.anotaciones.*;
+import utn.trabajo_practico.utilidades.*;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;

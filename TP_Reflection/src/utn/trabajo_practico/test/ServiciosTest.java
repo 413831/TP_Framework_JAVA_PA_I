@@ -41,7 +41,7 @@ public class ServiciosTest
     @Test
     public void modificarObjetoOK()
     {
-        Auto auto = new Auto(new BigInteger(String.valueOf(34)), "Ford", "Focus", 123400);
+        Auto auto = new Auto(new BigInteger(String.valueOf(34)), "Ford", "Focus", 99999);
         try
         {
             Object object = Consultas.modificar(auto);
@@ -77,7 +77,7 @@ public class ServiciosTest
     @Test
     public void eliminarObjetoOK()
     {
-        Auto auto = new Auto(new BigInteger(String.valueOf(41)), "Ford", "Focus", 123400);
+        Auto auto = new Auto(new BigInteger(String.valueOf(43)), "Ford", "Focus", 123400);
         try
         {
             boolean response = Consultas.eliminar(auto);
