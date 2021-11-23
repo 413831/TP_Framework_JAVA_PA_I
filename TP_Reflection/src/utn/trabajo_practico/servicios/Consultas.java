@@ -87,6 +87,7 @@ public class Consultas
                     }
                 }
             }
+            insert.close();
         }
         catch (SQLException e)
         {
@@ -95,6 +96,9 @@ public class Consultas
         catch (ClassCastException ex)
         {
             ex.printStackTrace();
+        }
+        finally
+        {
         }
         return object;
     }
@@ -167,6 +171,7 @@ public class Consultas
             PreparedStatement update = UConexion.getInstance().getConnection().prepareStatement(query + filter);
             // Query execution
             update.execute();
+            update.close();
         }
         catch (SQLException e)
         {
@@ -200,7 +205,9 @@ public class Consultas
             System.out.println("DELETE");
             PreparedStatement delete = UConexion.getInstance().getConnection().prepareStatement(query);
             // Query execution
-            return delete.execute();
+            boolean response = delete.execute();
+            delete.close();
+            return response;
         }
         catch (SQLException e)
         {
@@ -263,7 +270,7 @@ public class Consultas
                     }
                 }
             }
-
+            select.close();
             return constructor.get().newInstance(arguments);
         }
         catch (SQLException e)
@@ -325,6 +332,7 @@ public class Consultas
                 }
                 list.add(constructor.get().newInstance(arguments));
             }
+            select.close();
             return list;
         }
         catch (SQLException e)
@@ -365,7 +373,6 @@ public class Consultas
             // Getting the object ID value with its getters using ubean helper class
             Field nombreIdCompuesto = Arrays.stream(attributeObject.getClass().getDeclaredFields()).filter(f -> f.getAnnotation(Id.class) != null).findFirst().get();
             Object idAttributeObject = ubean.ejecutarGet(attributeObject, nombreIdCompuesto.getName());
-
             return idAttributeObject;
         }
         catch (IllegalAccessException e)

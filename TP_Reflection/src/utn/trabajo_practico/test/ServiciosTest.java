@@ -77,7 +77,7 @@ public class ServiciosTest
     @Test
     public void eliminarObjetoOK()
     {
-        Auto auto = new Auto(new BigInteger(String.valueOf(43)), "Ford", "Focus", 123400);
+        Auto auto = new Auto(new BigInteger(String.valueOf(44)), "Ford", "Focus", 123400);
         try
         {
             boolean response = Consultas.eliminar(auto);
