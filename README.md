@@ -1,4 +1,6 @@
-# Trabajo práctico Reflection
+# Trabajo práctico Framework JAVA con Reflection
+## Proyecto para Programación Avanzada I UTN FRA
+
 Creación de framework para manejar consultas con a bases de datos con JDBC utilizando la API Reflection de JAVA
 
 
